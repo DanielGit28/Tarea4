@@ -7,7 +7,9 @@ public class Movimiento {
     private String descripcion;
     private double monto;
     private TipoMovimiento tipoMovimiento;
+    //EN EL ATRBIUTO 'numeroCuenta', no se utiliza un objeto. Ya que puede ser cualquier tipo de cuenta: corriente, ahorro o ahorro programado
     private int numeroCuenta;
+
 
     public LocalDate getFecha() {
         return fecha;

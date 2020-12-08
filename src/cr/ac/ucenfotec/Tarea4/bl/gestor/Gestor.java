@@ -1,79 +1,115 @@
 package cr.ac.ucenfotec.Tarea4.bl.gestor;
 
+import cr.ac.ucenfotec.Tarea4.PropertiesHandler;
+import cr.ac.ucenfotec.Tarea4.bl.dao.*;
 import cr.ac.ucenfotec.Tarea4.bl.entidades.*;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
-import static java.time.temporal.ChronoUnit.DAYS;
 
 public class Gestor {
-    //----SECCION DE CLIENTES----
-    public void guardarCliente(String nombre, String id, String direccion) {
-        Cliente cliente = new Cliente(nombre,id,direccion);
-        ArrayList<String> lines = new ArrayList<>();
-        lines.add(cliente.toCSVLine());
-        try {                          /* /dev/listOfMaterial.csv   */
-            Files.write(Paths.get("c:\\dev\\listOfClientes.csv"),lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
+    PropertiesHandler propertiesHandler = new PropertiesHandler();
+
+    ClienteDAO clienteDao;
+
+    CuentaDAO cuentaDAO;
+
+    CuentaAhorroDAO cuentaAhorroDAO;
+
+    CuentaAhorroProgramadoDAO cuentaAhorroProgramadoDAO;
+
+    MovimientoDAO movimientoDAO;
+
+    Connection connection;
+
+    public Gestor() {
+        try {
+            propertiesHandler.loadProperties();
+            String driver = propertiesHandler.getDriver();
+            Class.forName(driver).newInstance();
+            this.clienteDao = new ClienteDAO(this.connection);
+            this.cuentaDAO = new CuentaDAO(this.connection);
+            this.cuentaAhorroDAO = new CuentaAhorroDAO(this.connection);
+            this.cuentaAhorroProgramadoDAO = new CuentaAhorroProgramadoDAO(this.connection);
+            this.movimientoDAO = new MovimientoDAO(this.connection);
+            System.out.println("LOADED DRIVER ---> " + driver);
+            String url= propertiesHandler.getCnxStr();
+            Connection con = DriverManager.getConnection(url, propertiesHandler.getUser(), propertiesHandler.getPassword());
+            System.out.println("CONNECTED TO ---> "+ url);
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
+
+
+    }
+
+
+
+
+    //----SECCION DE CLIENTES----
+    public void guardarCliente(String nombre, String id, String direccion) {
+        Cliente nuevo = new Cliente(nombre,id,direccion);
+        try {
+            clienteDao.guardarCliente(nuevo);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 
     //----FIN SECCION CLIENTES----
 
     //----SECCION DE CUENTAS----
-    public void guardarCuentaCorriente(int numeroCuenta, double saldo, LocalDate fechaApertura, String idCliente) {
-        Cuenta cuenta = new Cuenta(numeroCuenta,saldo,fechaApertura,idCliente);
-        ArrayList<String> lines = new ArrayList<>();
-        lines.add(cuenta.toCSVLine());
-        try {                          /* /dev/listOfMaterial.csv   */
-            Files.write(Paths.get("c:\\dev\\listOfCuentasCorrientes.csv"),lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
-        } catch (IOException e) {
+    public void guardarCuenta(int numeroCuenta, double saldo, LocalDate fechaApertura,Cliente cliente) {
+        Cuenta nuevo = new Cuenta(numeroCuenta,saldo,fechaApertura,cliente);
+        try {
+            cuentaDAO.guardarCuenta(nuevo);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+    public void guardarCuentaAhorro(int numeroCuenta, double saldo, LocalDate fechaApertura,Cliente cliente) {
+        CuentaAhorro nuevo = new CuentaAhorro(numeroCuenta,saldo,fechaApertura,cliente);
+        try {
+            cuentaAhorroDAO.guardarCuentaAhorro(nuevo);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void guardarCuentaAhorroProgramado(int numeroCuenta, double saldo, LocalDate fechaApertura,Cliente cliente,Cuenta cuenta) {
+        CuentaAhorroProgramado nuevo = new CuentaAhorroProgramado(numeroCuenta,saldo,fechaApertura,cliente,cuenta);
+        try {
+            cuentaAhorroProgramadoDAO.guardarCuentaAhorro(nuevo);
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
 
-    public void guardarCuentaAhorro(int numeroCuenta, double saldo, LocalDate fechaApertura, String idCliente) {
-        CuentaAhorro cuenta = new CuentaAhorro(numeroCuenta,saldo,fechaApertura, idCliente);
-        ArrayList<String> lines = new ArrayList<>();
-        lines.add(cuenta.toCSVLine());
-        try {                          /* /dev/listOfMaterial.csv   */
-            Files.write(Paths.get("c:\\dev\\listOfCuentasAhorro.csv"),lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void guardarCuentaAhorroProgramado(int numeroCuenta, double saldo, LocalDate fechaApertura,String idCliente,int cuentaCorrienteAsociada) {
-        CuentaAhorroProgramado cuenta = new CuentaAhorroProgramado(numeroCuenta,saldo,fechaApertura,idCliente,cuentaCorrienteAsociada);
-        ArrayList<String> lines = new ArrayList<>();
-        lines.add(cuenta.toCSVLine());
-        try {                          /* /dev/listOfMaterial.csv   */
-            Files.write(Paths.get("c:\\dev\\listOfCuentasAhorroProgramado.csv"),lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
     public void guardarMovimiento(LocalDate fecha, String descripcion, double monto, TipoMovimiento tipoMovimiento,int numeroCuenta) {
-        Movimiento movimiento = new Movimiento(fecha,descripcion,monto,tipoMovimiento,numeroCuenta);
-        ArrayList<String> lines = new ArrayList<>();
-        lines.add(movimiento.toCSVLine());
-        try {                          /* /dev/listOfMaterial.csv   */
-            Files.write(Paths.get("c:\\dev\\listOfMovimientos.csv"),lines, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND);
-        } catch (IOException e) {
+        Movimiento nuevo = new Movimiento(fecha,descripcion,monto,tipoMovimiento,numeroCuenta);
+        try {
+            movimientoDAO.guardarMovimiento(nuevo);
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -183,26 +219,20 @@ public class Gestor {
     //----FIN SECCION CUENTAS----
 
     //--LISTADOS DE LOS OBJETOS PARA PODER REALIZAR MOVIMIENTOS--
-    public ArrayList<Cliente> listaClientes(){
-        File archivo = new File("c:\\dev\\listOfCuentasCorrientes.csv");
-        ArrayList<Cliente> result = new ArrayList<>();
-        BufferedReader reader;
-        if(archivo.exists()) {
-            try {
-                reader = new BufferedReader(new FileReader("c:\\dev\\listOfClientes.csv"));
-                String currentLine = reader.readLine();
-                while (currentLine != null) {
-                    result.add(new Cliente(currentLine));
-                    currentLine = reader.readLine();
-                }
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return result;
+    public void listaClientes() throws SQLException {
+
+        ArrayList<Cliente> result = clienteDao.obtenerTodosLosClientes();
+        for (Cliente cliente: result)
+            System.out.println(cliente.toString());
     }
+
+    public void listaCuentas() throws SQLException {
+        ArrayList<Cuenta> result = cuentaDAO.obtenerTodosLasCuentas();
+        for (Cuenta cuenta: result)
+            System.out.println(cuenta.toString());
+    }
+
+
     public Cuenta encontrarCuenta(int numeroCuenta) {
         Cuenta cuentaBuscada = null;
         for (Cuenta cuenta: listaCuentaCorriente()) {

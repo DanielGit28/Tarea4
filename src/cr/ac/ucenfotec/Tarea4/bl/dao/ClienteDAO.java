@@ -29,7 +29,7 @@ public class ClienteDAO {
         return null;
     }
 
-    public List<Cliente> obtenerTodosLosClientes() throws SQLException {
+    public ArrayList<Cliente> obtenerTodosLosClientes() throws SQLException {
         ResultSet resultado = this.queryClientes.executeQuery();
         ArrayList<Cliente> listaClientes = new ArrayList<>();
         while (resultado.next()){

@@ -15,8 +15,8 @@ public class CuentaAhorro extends Cuenta{
 
     public CuentaAhorro() {}
 
-    public CuentaAhorro(int numeroCuenta, double saldo, LocalDate fechaApertura, String idCliente) {
-        super(numeroCuenta, saldo, fechaApertura,idCliente);
+    public CuentaAhorro(int numeroCuenta, double saldo, LocalDate fechaApertura, Cliente cliente) {
+        super(numeroCuenta, saldo, fechaApertura,cliente);
         this.tasaInteres = tasaInteres;
     }
 
@@ -27,7 +27,7 @@ public class CuentaAhorro extends Cuenta{
                 ", numeroCuenta=" + numeroCuenta +
                 ", saldo=" + saldo +
                 ", fechaApertura=" + fechaApertura +
-                ", idCliente=" + idCliente +
+                ", Cliente=" + cliente +
                 '}';
     }
 }

@@ -6,7 +6,7 @@ public class Cuenta {
     protected int numeroCuenta;
     protected double saldo;
     protected LocalDate fechaApertura;
-    protected String idCliente;
+    protected Cliente cliente;
 
     public int getNumeroCuenta() {
         return numeroCuenta;
@@ -32,24 +32,23 @@ public class Cuenta {
         this.fechaApertura = fechaApertura;
     }
 
-    public String getIdCliente() {
-        return idCliente;
+    public Cliente getCliente() {
+        return cliente;
     }
 
-    public void setIdCliente(String idCliente) {
-        this.idCliente = idCliente;
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
     }
 
     public Cuenta() {
     }
 
-    public Cuenta(int numeroCuenta, double saldo, LocalDate fechaApertura, String idCliente) {
+    public Cuenta(int numeroCuenta, double saldo, LocalDate fechaApertura, Cliente cliente) {
         this.numeroCuenta = numeroCuenta;
         this.saldo = saldo;
         this.fechaApertura = fechaApertura;
-        this.idCliente = idCliente;
+        this.cliente = cliente;
     }
-
 
     @Override
     public String toString() {
@@ -57,7 +56,7 @@ public class Cuenta {
                 "numeroCuenta=" + numeroCuenta +
                 ", saldo=" + saldo +
                 ", fechaApertura=" + fechaApertura +
-                ", idCliente=" + this.idCliente +
+                ", cliente=" + cliente +
                 '}';
     }
 }

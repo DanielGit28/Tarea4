@@ -1,33 +1,35 @@
 package cr.ac.ucenfotec.Tarea4.bl.entidades;
 
+import com.sun.xml.internal.ws.client.ClientTransportException;
+
 import java.time.LocalDate;
 
 public class CuentaAhorroProgramado extends Cuenta{
-    private int cuentaCorrienteAsociada;
+    private Cuenta cuentaCorrienteAsociada;
 
-    public int getCuentaCorrienteAsociada() {
+    public Cuenta getCuentaCorrienteAsociada() {
         return cuentaCorrienteAsociada;
     }
 
-    public void setCuentaCorrienteAsociada(int cuentaCorrienteAsociada) {
+    public void setCuentaCorrienteAsociada(Cuenta cuentaCorrienteAsociada) {
         this.cuentaCorrienteAsociada = cuentaCorrienteAsociada;
     }
 
     public CuentaAhorroProgramado(){}
 
-    public CuentaAhorroProgramado(int numeroCuenta, double saldo, LocalDate fechaApertura, String idCliente, int cuentaCorrienteAsociada) {
-        super(numeroCuenta,saldo,fechaApertura,idCliente);
+    public CuentaAhorroProgramado(int numeroCuenta, double saldo, LocalDate fechaApertura, Cliente cliente, Cuenta cuentaCorrienteAsociada) {
+        super(numeroCuenta,saldo,fechaApertura,cliente);
         this.cuentaCorrienteAsociada = cuentaCorrienteAsociada;
     }
 
     @Override
     public String toString() {
         return "CuentaAhorroProgramado{" +
-                "cuentaCorrienteAsociada=" + getCuentaCorrienteAsociada() +
+                "cuentaCorrienteAsociada=" + cuentaCorrienteAsociada +
                 ", numeroCuenta=" + numeroCuenta +
                 ", saldo=" + saldo +
                 ", fechaApertura=" + fechaApertura +
-                ", idCliente=" + idCliente +
+                ", Cliente=" + cliente +
                 '}';
     }
 }

@@ -21,6 +21,7 @@ public class CuentaDAO {
 
     public CuentaDAO(Connection conexion){
         this.cnx = conexion;
+        clienteDAO = new ClienteDAO(cnx);
         try {
             this.cmdInsertar = cnx.prepareStatement(TEMPLATE_CMD_INSERTAR);
             this.queryCuentas = cnx.prepareStatement(TEMPLATE_QRY_TODOSLASCUENTAS);
@@ -34,19 +35,18 @@ public class CuentaDAO {
         Statement query = cnx.createStatement();
 
         ResultSet resultado = query.executeQuery("select * from cuenta where numeroCuenta = " + numCuenta + "");
-        //System.out.println("IdCliente: "+resultado.getString("idCliente"));
+
         if(resultado.next()) {
             cuenta.setNumeroCuenta(resultado.getInt("numeroCuenta"));
-            System.out.println("numeroCuenta: "+cuenta.getNumeroCuenta());
-            //System.out.println(resultado.getInt("numeroCuenta"));
+
             cuenta.setSaldo(resultado.getDouble("saldo"));
             cuenta.setFechaApertura(resultado.getDate("fechaApertura").toLocalDate());
-            System.out.println("Fecha: "+cuenta.getFechaApertura());
+
             String idCliente = resultado.getString("idCliente");
             Cliente resultadoCliente = clienteDAO.obtenerCliente(idCliente);
             cuenta.setCliente(resultadoCliente);
             //cuenta.setCliente(clienteDAO.obtenerCliente(resultado.getString("idCliente")));
-            System.out.println( "cliente: "+cuenta.getCliente().toString());
+
         }
         //System.out.println(cuenta.toString());
         return cuenta;

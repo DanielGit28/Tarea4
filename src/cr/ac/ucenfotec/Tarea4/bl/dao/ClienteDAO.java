@@ -18,8 +18,11 @@ public class ClienteDAO {
     private final String TEMPLATE_QRY_TODOSLOSCLIENTES = "select * from cliente";
 
     public ClienteDAO(Connection conexion){
+
         this.cnx = conexion;
+        //System.out.println("Primera conexión: "+this.cnx);
         try {
+            //System.out.println("Segunda conexión: "+this.cnx);
             this.cmdInsertar = cnx.prepareStatement(TEMPLATE_CMD_INSERTAR);
             this.queryClientes = cnx.prepareStatement(TEMPLATE_QRY_TODOSLOSCLIENTES);
         } catch (SQLException throwables) {
@@ -35,13 +38,12 @@ public class ClienteDAO {
         if(resultado.next()) {
             //resultado.beforeFirst();
             cliente.setNombre(resultado.getString("nombre"));
-            System.out.println(cliente.getNombre());
+
             cliente.setId(resultado.getString("identificacion"));
             cliente.setDireccion(resultado.getString("direccion"));
         } else {
             System.out.println("Cliente vacío");
         }
-        System.out.println("Cliente: "+cliente.toString());
         return cliente;
     }
 

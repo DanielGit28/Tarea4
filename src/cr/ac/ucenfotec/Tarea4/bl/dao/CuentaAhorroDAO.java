@@ -22,6 +22,7 @@ public class CuentaAhorroDAO {
 
     public CuentaAhorroDAO(Connection conexion){
         this.cnx = conexion;
+        clienteDAO = new ClienteDAO(cnx);
         try {
             this.cmdInsertar = cnx.prepareStatement(TEMPLATE_CMD_INSERTAR);
             this.queryCuentas = cnx.prepareStatement(TEMPLATE_QRY_TODOSLASCUENTASAHORRO);

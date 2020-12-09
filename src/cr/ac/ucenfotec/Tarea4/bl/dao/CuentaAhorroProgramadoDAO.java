@@ -18,12 +18,14 @@ public class CuentaAhorroProgramadoDAO {
     private ClienteDAO clienteDAO;
     private CuentaDAO cuentaDAO;
 
-    private final String TEMPLATE_CMD_INSERTAR = "insert into cuenta_ahorro_programado(numeroCuenta,saldo,fechaApertura,idCliente)" +
-            " values (?,?,?,?)";
+    private final String TEMPLATE_CMD_INSERTAR = "insert into cuenta_ahorro_programado(numeroCuenta,saldo,fechaApertura,idCliente,cuentaCorrienteAsociada)" +
+            " values (?,?,?,?,?)";
     private final String TEMPLATE_QRY_TODOSLASCUENTASAHORROPROGRAMADO = "select * from cuenta_ahorro_programado";
 
     public CuentaAhorroProgramadoDAO(Connection conexion){
         this.cnx = conexion;
+        clienteDAO = new ClienteDAO(cnx);
+        cuentaDAO = new CuentaDAO(cnx);
         try {
             this.cmdInsertar = cnx.prepareStatement(TEMPLATE_CMD_INSERTAR);
             this.queryCuentas = cnx.prepareStatement(TEMPLATE_QRY_TODOSLASCUENTASAHORROPROGRAMADO);

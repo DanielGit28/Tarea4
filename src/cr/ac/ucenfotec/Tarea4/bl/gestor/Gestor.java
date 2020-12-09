@@ -35,10 +35,11 @@ public class Gestor {
             propertiesHandler.loadProperties();
             String driver = propertiesHandler.getDriver();
             Class.forName(driver).newInstance();
-            System.out.println("LOADED DRIVER ---> " + driver);
+            //System.out.println("LOADED DRIVER ---> " + driver);
             String url= propertiesHandler.getCnxStr();
             connection = DriverManager.getConnection(url, propertiesHandler.getUser(), propertiesHandler.getPassword());
-            System.out.println("CONNECTED TO ---> "+ url);
+            //System.out.println("Conexión: "+this.connection);
+            //System.out.println("CONNECTED TO ---> "+ url);
 
             this.clienteDao = new ClienteDAO(this.connection);
             this.cuentaDAO = new CuentaDAO(this.connection);
@@ -104,9 +105,9 @@ public class Gestor {
 
     public void guardarCuentaAhorroProgramado(int numeroCuenta, double saldo, LocalDate fechaApertura,String idCliente,int cuentaAsociada) throws SQLException {
         Cuenta cuenta = cuentaDAO.obtenerCuenta(cuentaAsociada);
-        System.out.println(cuenta.toString() + " cuenta corriente");
+        //System.out.println(cuenta.toString() + " cuenta corriente");
         Cliente cliente = clienteDao.obtenerCliente(idCliente);
-        System.out.println(cliente.toString());
+        //System.out.println(cliente.toString());
 
         CuentaAhorroProgramado nuevo = new CuentaAhorroProgramado(numeroCuenta,saldo,fechaApertura,cliente,cuenta);
         try {
@@ -129,6 +130,7 @@ public class Gestor {
     public void modificarSaldoCuenta(int numeroCuenta, double monto, TipoMovimiento tipoMovimiento) throws  SQLException {
         //BufferedReader rd = null;
         int tipoCuenta = verificacionTipoCuenta(numeroCuenta);
+        System.out.println("Tipo Cuenta "+tipoCuenta);
         double saldoNuevo = 0;
         Cuenta cuenta = new Cuenta();
         CuentaAhorro cuentaAhorro = new CuentaAhorro();
@@ -205,11 +207,11 @@ public class Gestor {
         CuentaAhorro cuentaAhorro = cuentaAhorroDAO.obtenerCuentaAhorro(numCuenta);
         CuentaAhorroProgramado cuentaAhorroProgramado = cuentaAhorroProgramadoDAO.obtenerCuenta(numCuenta);
 
-        if(cuenta != null) {
+        if(cuenta.getNumeroCuenta() == numCuenta) {
             tipo = 1;
-        } else if(cuentaAhorro != null) {
+        } else if(cuentaAhorro.getNumeroCuenta() == numCuenta) {
             tipo = 2;
-        } else if(cuentaAhorroProgramado != null) {
+        } else if(cuentaAhorroProgramado.getNumeroCuenta() == numCuenta) {
             tipo = 3;
         }
 

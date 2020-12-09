@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.List;
 
 public class Controlador {
@@ -27,6 +28,8 @@ public class Controlador {
                 ejecutarOpcion(opcion);
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
+            } catch(InputMismatchException e) {
+                System.out.println("No ingreso ningún valor o presionó el botón de enter varias veces");
             }
         } while (opcion != 4);
     }

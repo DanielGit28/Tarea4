@@ -30,25 +30,35 @@ public class CuentaAhorroDAO {
         }
     }
 
-    public Cliente encontrarPorId(String cedula){
-        return null;
+    public CuentaAhorro obtenerCuentaAhorro(int numCuenta) throws SQLException {
+        CuentaAhorro cuenta = new CuentaAhorro();
+        Statement query = cnx.createStatement();
+
+        ResultSet resultado = query.executeQuery("select * from cuenta_ahorro where numeroCuenta = " + numCuenta + "");
+        if(resultado.next()) {
+            cuenta.setNumeroCuenta(resultado.getInt("numeroCuenta"));
+            cuenta.setSaldo(resultado.getDouble("saldo"));
+            cuenta.setFechaApertura(resultado.getDate("fechaApertura").toLocalDate());
+            cuenta.setCliente(clienteDAO.obtenerCliente(resultado.getString("idCliente")));
+        }
+        return cuenta;
     }
 
-    public List<CuentaAhorro> obtenerTodosLasCuentasAhorro() throws SQLException {
+    public ArrayList<CuentaAhorro> obtenerTodosLasCuentasAhorro() throws SQLException {
         ResultSet resultado = this.queryCuentas.executeQuery();
         ArrayList<CuentaAhorro> listaCuentas = new ArrayList<>();
-        ArrayList<Cliente> listaClientes = clienteDAO.obtenerTodosLosClientes();
         while (resultado.next()){
             CuentaAhorro leido = new CuentaAhorro();
-            leido.setNumeroCuenta(resultado.getInt("numeroCuenta"));
-            leido.setSaldo(resultado.getDouble("saldo"));
-            leido.setFechaApertura(LocalDate.parse(resultado.getString("fechaApertura")));
-            for (Cliente cliente: listaClientes) {
-                if(cliente.getId().equals(resultado.getString("idCliente"))) {
-                    leido.setCliente(cliente);
-                }
+            if(resultado.getRow() == 0) {
+                System.out.println("Resultado vacío");
+            } else {
+                leido.setNumeroCuenta(resultado.getInt("numeroCuenta"));
+                leido.setSaldo(resultado.getDouble("saldo"));
+                leido.setFechaApertura(LocalDate.parse(resultado.getString("fechaApertura")));
+                leido.setCliente(clienteDAO.obtenerCliente(resultado.getString("idCliente")));
+                listaCuentas.add(leido);
             }
-            listaCuentas.add(leido);
+
         }
         return listaCuentas;
     }

@@ -1,11 +1,13 @@
 package cr.ac.ucenfotec.Tarea4.controlador;
 
+import cr.ac.ucenfotec.Tarea4.bl.dao.CuentaAhorroProgramadoDAO;
 import cr.ac.ucenfotec.Tarea4.bl.entidades.CuentaAhorroProgramado;
 import cr.ac.ucenfotec.Tarea4.bl.entidades.TipoMovimiento;
 import cr.ac.ucenfotec.Tarea4.bl.gestor.Gestor;
 import cr.ac.ucenfotec.Tarea4.ui.UI;
 
 import java.io.FileNotFoundException;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,11 +23,15 @@ public class Controlador {
         do {
             ui.mostrarMenu();
             opcion = ui.leerOpcion();
-            ejecutarOpcion(opcion);
+            try {
+                ejecutarOpcion(opcion);
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         } while (opcion != 4);
     }
 
-    private void ejecutarOpcion(int opcion) {
+    private void ejecutarOpcion(int opcion) throws SQLException {
         switch (opcion){
             case 1:
                 crearCliente();
@@ -37,6 +43,7 @@ public class Controlador {
                 ejecutarMovimiento();
                 break;
             case 4:
+                gestor.getConnection().close();
                 break;
         }
 
@@ -54,13 +61,25 @@ public class Controlador {
     private void ejecutarOpcionAbrirCuenta(int opcion) {
         switch (opcion){
             case 1:
-                crearCuentaCorriente();
+                try {
+                    crearCuentaCorriente();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
                 break;
             case 2:
-                crearCuentaAhorro();
+                try {
+                    crearCuentaAhorro();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
                 break;
             case 3:
-                crearCuentaAhorroProgramado();
+                try {
+                    crearCuentaAhorroProgramado();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
                 break;
             case 4:
                 break;
@@ -78,10 +97,18 @@ public class Controlador {
     private void ejecutarOpcionMovimiento(int opcion) {
         switch (opcion){
             case 1:
-                realizarDeposito();
+                try {
+                    realizarDeposito();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
                 break;
             case 2:
-                realizarRetiro();
+                try {
+                    realizarRetiro();
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
                 break;
             case 3:
                 break;
@@ -101,7 +128,7 @@ public class Controlador {
         gestor.guardarCliente(nombre,id,direccion);
         System.out.println("Cliente creado con éxito");
     }
-    private void crearCuentaCorriente() {
+    private void crearCuentaCorriente() throws SQLException {
         ui.imprimirMensaje("Ingrese el número de cuenta: ");
         int numCuenta = ui.leerOpcion();
         if(gestor.verificacionNumeroCuenta(numCuenta) == false) {
@@ -109,13 +136,13 @@ public class Controlador {
             LocalDate fechaApertura = LocalDate.now();
             ui.imprimirMensaje("Ingrese la identificación del cliente dueño de la cuenta: ");
             String idCliente = ui.leerTexto();
-            gestor.guardarCuentaCorriente(numCuenta,saldo,fechaApertura,idCliente);
+            gestor.guardarCuenta(numCuenta,saldo,fechaApertura,idCliente);
             System.out.println("Cuenta creada con éxito");
         } else {
             System.out.println("Ya exise una cuenta con ese número");
         }
     }
-    private void crearCuentaAhorro() {
+    private void crearCuentaAhorro() throws SQLException {
         ui.imprimirMensaje("Ingrese el número de cuenta: ");
         int numCuenta = ui.leerOpcion();
         if(gestor.verificacionNumeroCuenta(numCuenta) == false) {
@@ -129,7 +156,7 @@ public class Controlador {
             System.out.println("Ya existe una cuenta con ese número");
         }
     }
-    private void crearCuentaAhorroProgramado() {
+    private void crearCuentaAhorroProgramado() throws SQLException {
         ui.imprimirMensaje("Ingrese el número de cuenta: ");
         int numCuenta = ui.leerOpcion();
         if(gestor.verificacionNumeroCuenta(numCuenta) == false) {
@@ -139,7 +166,7 @@ public class Controlador {
             String idCliente = ui.leerTexto();
             ui.imprimirMensaje("Ingrese el número de cuenta corriente que desea asociar: ");
             int cuentaAsociada = ui.leerOpcion();
-            if(verificacionCuentaAsociada(cuentaAsociada) == false) {
+            if(gestor.verificacionCuentaAsociada(numCuenta,cuentaAsociada) == false) {
                 gestor.guardarCuentaAhorroProgramado(numCuenta,saldo,fechaApertura,idCliente,cuentaAsociada);
                 System.out.println("Cuenta creada con éxito");
             }
@@ -150,7 +177,7 @@ public class Controlador {
 //--FIN SECCIONES OBJETOS--
 
     //---SECCION DE MOVIMIENTOS---
-    public void realizarDeposito() {
+    public void realizarDeposito() throws SQLException {
         ui.imprimirMensaje("Ingrese el número de cuenta asociado: ");
         int numCuenta = ui.leerOpcion();
         LocalDate fecha = LocalDate.now();
@@ -163,15 +190,11 @@ public class Controlador {
         gestor.guardarMovimiento(fecha,descripcion,montoDeposito,movimiento,numCuenta);
         //int tipo = gestor.verificacionTipoCuenta(numCuenta);
         //String idCliente = gestor.encontrarCuenta(numCuenta).getIdCliente();
-        try {
-            gestor.modificarSaldoCuenta(numCuenta,montoDeposito,TipoMovimiento.DEPOSITO);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        gestor.modificarSaldoCuenta(numCuenta,montoDeposito,TipoMovimiento.DEPOSITO);
         System.out.println("Depósito realizado con éxito");
 
     }
-    public void realizarRetiro() {
+    public void realizarRetiro() throws SQLException {
         ui.imprimirMensaje("Ingrese el número de cuenta asociado: ");
         int numCuenta = ui.leerOpcion();
         LocalDate fecha = LocalDate.now();
@@ -184,26 +207,14 @@ public class Controlador {
         gestor.guardarMovimiento(fecha,descripcion,montoRetiro,movimiento,numCuenta);
         //int tipo = gestor.verificacionTipoCuenta(numCuenta);
         //System.out.println("Tipo "+tipo);
-        try {
-            gestor.modificarSaldoCuenta(numCuenta,montoRetiro,TipoMovimiento.RETIRO);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        gestor.modificarSaldoCuenta(numCuenta,montoRetiro,TipoMovimiento.RETIRO);
         System.out.println("Retiro realizado con éxito");
 
     }
 
     //---FIN SECCION DE MOVIMIENTOS---
 
-    public boolean verificacionCuentaAsociada(int cuentaCorriente) {
-        boolean estado = false;
-        ArrayList<CuentaAhorroProgramado> ahorros = gestor.listaCuentaAhorroProgramado();
-        for (CuentaAhorroProgramado ahorro: ahorros) {
-            if(ahorro.getCuentaCorrienteAsociada() == cuentaCorriente) {
-                estado = true;
-                System.out.println("Ya existe una cuenta corriente asociada");
-            }
-        }
-        return estado;
-    }
+
+
+
 }

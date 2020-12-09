@@ -36,18 +36,18 @@ public class Cuenta {
         return cliente;
     }
 
-    public void setCliente(Cliente cliente) {
-        this.cliente = cliente;
+    public void setCliente(Cliente pcliente) {
+        this.cliente = pcliente;
     }
 
     public Cuenta() {
     }
 
-    public Cuenta(int numeroCuenta, double saldo, LocalDate fechaApertura, Cliente cliente) {
+    public Cuenta(int numeroCuenta, double saldo, LocalDate fechaApertura, Cliente pcliente) {
         this.numeroCuenta = numeroCuenta;
         this.saldo = saldo;
         this.fechaApertura = fechaApertura;
-        this.cliente = cliente;
+        this.cliente = pcliente;
     }
 
     @Override

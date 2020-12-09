@@ -6,11 +6,11 @@ import cr.ac.ucenfotec.Tarea4.bl.entidades.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+
+import static java.time.temporal.ChronoUnit.DAYS;
 
 
 public class Gestor {
@@ -26,22 +26,26 @@ public class Gestor {
 
     MovimientoDAO movimientoDAO;
 
-    Connection connection;
+    protected Connection connection;
+
+    public Connection getConnection() {return connection;}
 
     public Gestor() {
         try {
             propertiesHandler.loadProperties();
             String driver = propertiesHandler.getDriver();
             Class.forName(driver).newInstance();
+            System.out.println("LOADED DRIVER ---> " + driver);
+            String url= propertiesHandler.getCnxStr();
+            connection = DriverManager.getConnection(url, propertiesHandler.getUser(), propertiesHandler.getPassword());
+            System.out.println("CONNECTED TO ---> "+ url);
+
             this.clienteDao = new ClienteDAO(this.connection);
             this.cuentaDAO = new CuentaDAO(this.connection);
             this.cuentaAhorroDAO = new CuentaAhorroDAO(this.connection);
             this.cuentaAhorroProgramadoDAO = new CuentaAhorroProgramadoDAO(this.connection);
             this.movimientoDAO = new MovimientoDAO(this.connection);
-            System.out.println("LOADED DRIVER ---> " + driver);
-            String url= propertiesHandler.getCnxStr();
-            Connection con = DriverManager.getConnection(url, propertiesHandler.getUser(), propertiesHandler.getPassword());
-            System.out.println("CONNECTED TO ---> "+ url);
+
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
@@ -75,7 +79,9 @@ public class Gestor {
     //----FIN SECCION CLIENTES----
 
     //----SECCION DE CUENTAS----
-    public void guardarCuenta(int numeroCuenta, double saldo, LocalDate fechaApertura,Cliente cliente) {
+    public void guardarCuenta(int numeroCuenta, double saldo, LocalDate fechaApertura,String idCliente) throws SQLException {
+        Cliente cliente = clienteDao.obtenerCliente(idCliente);
+        //System.out.println(cliente.toString());
         Cuenta nuevo = new Cuenta(numeroCuenta,saldo,fechaApertura,cliente);
         try {
             cuentaDAO.guardarCuenta(nuevo);
@@ -86,7 +92,8 @@ public class Gestor {
     }
 
 
-    public void guardarCuentaAhorro(int numeroCuenta, double saldo, LocalDate fechaApertura,Cliente cliente) {
+    public void guardarCuentaAhorro(int numeroCuenta, double saldo, LocalDate fechaApertura,String idCliente) throws SQLException {
+        Cliente cliente = clienteDao.obtenerCliente(idCliente);
         CuentaAhorro nuevo = new CuentaAhorro(numeroCuenta,saldo,fechaApertura,cliente);
         try {
             cuentaAhorroDAO.guardarCuentaAhorro(nuevo);
@@ -95,7 +102,12 @@ public class Gestor {
         }
     }
 
-    public void guardarCuentaAhorroProgramado(int numeroCuenta, double saldo, LocalDate fechaApertura,Cliente cliente,Cuenta cuenta) {
+    public void guardarCuentaAhorroProgramado(int numeroCuenta, double saldo, LocalDate fechaApertura,String idCliente,int cuentaAsociada) throws SQLException {
+        Cuenta cuenta = cuentaDAO.obtenerCuenta(cuentaAsociada);
+        System.out.println(cuenta.toString() + " cuenta corriente");
+        Cliente cliente = clienteDao.obtenerCliente(idCliente);
+        System.out.println(cliente.toString());
+
         CuentaAhorroProgramado nuevo = new CuentaAhorroProgramado(numeroCuenta,saldo,fechaApertura,cliente,cuenta);
         try {
             cuentaAhorroProgramadoDAO.guardarCuentaAhorro(nuevo);
@@ -114,66 +126,37 @@ public class Gestor {
         }
     }
 
-    public void modificarSaldoCuenta(int numeroCuenta, double monto, TipoMovimiento tipoMovimiento) throws FileNotFoundException {
+    public void modificarSaldoCuenta(int numeroCuenta, double monto, TipoMovimiento tipoMovimiento) throws  SQLException {
         //BufferedReader rd = null;
         int tipoCuenta = verificacionTipoCuenta(numeroCuenta);
-        String path = null;
         double saldoNuevo = 0;
-        Cuenta cuentaBuscada = encontrarCuenta(numeroCuenta);
-        ArrayList<String> lineasNuevas = new ArrayList<>();
-        int pos = 0;
-        int contador = 0;
+        Cuenta cuenta = new Cuenta();
+        CuentaAhorro cuentaAhorro = new CuentaAhorro();
+        CuentaAhorroProgramado cuentaAhorroProgramado = new CuentaAhorroProgramado();
+
+        Statement query = connection.createStatement();
+        String queryModificacion = null;
+
 
         if(tipoCuenta == 1) {
-            path = "c:\\dev\\listOfCuentasCorrientes.csv";
-            //rd = new BufferedReader( new FileReader ("c:\\dev\\listOfCuentasCorrientes.csv"));
-            saldoNuevo = saldoCuentaCorriente(cuentaBuscada,monto,tipoMovimiento);
-            for (Cuenta cuenta: listaCuentaCorriente()) {
-                if(cuenta.getNumeroCuenta() == numeroCuenta) {
-                    cuentaBuscada = cuenta;
-                    lineasNuevas.add(cuenta.toCSVLine());
-                    pos = contador;
-                    break;
-                }
-                contador += 1;
-            }
+            cuenta = cuentaDAO.obtenerCuenta(numeroCuenta);
+            saldoNuevo = saldoCuentaCorriente(cuenta,monto,tipoMovimiento);
+            queryModificacion = "update cuenta set saldo = "+saldoNuevo+"  where numeroCuenta = "+numeroCuenta+"";
         } else if (tipoCuenta == 2) {
-            path = "c:\\dev\\listOfCuentasAhorro.csv";
-            //rd = new BufferedReader( new FileReader ("c:\\dev\\listOfCuentasAhorro.csv"));
-            saldoNuevo = saldoCuentaAhorro(cuentaBuscada,monto,tipoMovimiento);
-            for (CuentaAhorro cuenta: listaCuentaAhorro()) {
-                if(cuenta.getNumeroCuenta() == numeroCuenta) {
-                    cuentaBuscada = cuenta;
-                    lineasNuevas.add(cuenta.toCSVLine());
-                    pos = contador;
-                    break;
-                }
-                contador += 1;
-            }
+            cuentaAhorro = cuentaAhorroDAO.obtenerCuentaAhorro(numeroCuenta);
+            saldoNuevo = saldoCuentaAhorro(cuentaAhorro,monto,tipoMovimiento);
+            queryModificacion = "update cuenta_ahorro set saldo = "+saldoNuevo+"  where numeroCuenta = "+numeroCuenta+"";
         } else if(tipoCuenta == 3) {
-            path = "c:\\dev\\listOfCuentasAhorroProgramado.csv";
-            //rd = new BufferedReader( new FileReader ("c:\\dev\\listOfCuentasAhorroProgramado.csv"));
-            saldoNuevo = saldoCuentaAhorroProgramado(cuentaBuscada,monto,tipoMovimiento);
-            for (CuentaAhorroProgramado cuenta: listaCuentaAhorroProgramado()) {
-                if(cuenta.getNumeroCuenta() == numeroCuenta) {
-                    cuentaBuscada = cuenta;
-                    lineasNuevas.add(cuenta.toCSVLine());
-                    pos = contador;
-                    break;
-                }
-                contador += 1;
-            }
+            cuentaAhorroProgramado = cuentaAhorroProgramadoDAO.obtenerCuenta(numeroCuenta);
+            saldoNuevo = saldoCuentaAhorroProgramado(cuentaAhorroProgramado,monto,tipoMovimiento);
+            queryModificacion = "update cuenta_ahorro_programado set saldo = "+saldoNuevo+"  where numeroCuenta = "+numeroCuenta+"";
         }
-        cuentaBuscada.setSaldo(saldoNuevo);
-        //System.out.println(cuentaBuscada.toCSVLine());
-        lineasNuevas.set(pos, cuentaBuscada.toCSVLine());
+        if(queryModificacion != null) {
+            query.execute(queryModificacion);
+        } else {
+            System.out.println("No se puede modificar el saldo por algún problema en las cuentas");
+        }
 
-        try {
-            Files.write(Paths.get(path),lineasNuevas, StandardCharsets.UTF_8, StandardOpenOption.CREATE,
-                    StandardOpenOption.WRITE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public double saldoCuentaCorriente(Cuenta cuenta, double monto, TipoMovimiento tipoMovimiento) {
@@ -185,7 +168,7 @@ public class Gestor {
         }
         return montoNuevo;
     }
-    public double saldoCuentaAhorro(Cuenta cuenta, double monto, TipoMovimiento tipoMovimiento) {
+    public double saldoCuentaAhorro(CuentaAhorro cuenta, double monto, TipoMovimiento tipoMovimiento) {
         double montoNuevo = cuenta.getSaldo();
         double saldo = cuenta.getSaldo();
         double mitadSaldo = saldo/2;
@@ -200,7 +183,7 @@ public class Gestor {
         }
         return montoNuevo;
     }
-    public double saldoCuentaAhorroProgramado(Cuenta cuenta, double monto, TipoMovimiento tipoMovimiento) {
+    public double saldoCuentaAhorroProgramado(CuentaAhorroProgramado cuenta, double monto, TipoMovimiento tipoMovimiento) {
         double montoNuevo = cuenta.getSaldo();
         LocalDate fechaActual = LocalDate.now();
         if(tipoMovimiento.equals(TipoMovimiento.DEPOSITO)) {
@@ -216,8 +199,66 @@ public class Gestor {
         return montoNuevo;
     }
 
+    public int verificacionTipoCuenta(int numCuenta) throws SQLException {
+        int tipo = 0;
+        Cuenta cuenta = cuentaDAO.obtenerCuenta(numCuenta);
+        CuentaAhorro cuentaAhorro = cuentaAhorroDAO.obtenerCuentaAhorro(numCuenta);
+        CuentaAhorroProgramado cuentaAhorroProgramado = cuentaAhorroProgramadoDAO.obtenerCuenta(numCuenta);
+
+        if(cuenta != null) {
+            tipo = 1;
+        } else if(cuentaAhorro != null) {
+            tipo = 2;
+        } else if(cuentaAhorroProgramado != null) {
+            tipo = 3;
+        }
+
+        return tipo;
+    }
+
+    public boolean verificacionCuentaAsociada(int numeroCuenta, int cuentaCorriente) throws SQLException {
+        boolean estado = false;
+        CuentaAhorroProgramado cuenta = cuentaAhorroProgramadoDAO.obtenerCuenta(numeroCuenta);
+        //System.out.println(cuenta.toString());
+        if(cuenta.getCliente() != null) {
+            if(cuenta.getCuentaCorrienteAsociada().getNumeroCuenta() == cuentaCorriente) {
+                estado = true;
+                System.out.println("Ya existe una cuenta asociada");
+            }
+        }
+
+        return estado;
+    }
+
+    public boolean verificacionNumeroCuenta(int numCuenta) throws SQLException {
+        boolean estado = false;
+        Cuenta cuenta = cuentaDAO.obtenerCuenta(numCuenta);
+        //System.out.println(cuenta.toString());
+        CuentaAhorro cuentaAhorro = cuentaAhorroDAO.obtenerCuentaAhorro(numCuenta);
+        CuentaAhorroProgramado cuentaAhorroProgramado = cuentaAhorroProgramadoDAO.obtenerCuenta(numCuenta);
+
+        if(cuenta != null ) {
+            if(cuenta.getNumeroCuenta() == numCuenta){
+                estado = true;
+            }
+
+        } else if(cuentaAhorro != null ) {
+            if(cuentaAhorro.getNumeroCuenta() == numCuenta) {
+                estado = true;
+            }
+
+        } else if(cuentaAhorroProgramado != null ) {
+            if(cuentaAhorroProgramado.getNumeroCuenta() == numCuenta) {
+                estado = true;
+            }
+
+        }
+        return estado;
+    }
+
     //----FIN SECCION CUENTAS----
 
+    /*
     //--LISTADOS DE LOS OBJETOS PARA PODER REALIZAR MOVIMIENTOS--
     public void listaClientes() throws SQLException {
 
@@ -233,72 +274,9 @@ public class Gestor {
     }
 
 
-    public Cuenta encontrarCuenta(int numeroCuenta) {
-        Cuenta cuentaBuscada = null;
-        for (Cuenta cuenta: listaCuentaCorriente()) {
-            if(cuenta.getNumeroCuenta() == numeroCuenta) {
-                cuentaBuscada = cuenta;
-            }
-        }
-        for (CuentaAhorro ahorro: listaCuentaAhorro()) {
-            if(ahorro.getNumeroCuenta() == numeroCuenta) {
-                return ahorro;
-            }
-        }
-        for (CuentaAhorroProgramado ahorroProgramado: listaCuentaAhorroProgramado()) {
-            if(ahorroProgramado.getNumeroCuenta() == numeroCuenta) {
-                return ahorroProgramado;
-            }
-        }
-        return cuentaBuscada;
-    }
-    public int verificacionTipoCuenta(int numCuenta) {
-        int tipo = 0;
-        List<Cuenta> corrientes = listaCuentaCorriente();
-        List<CuentaAhorro> ahorros = listaCuentaAhorro();
-        List<CuentaAhorroProgramado> ahorrosProgramados = listaCuentaAhorroProgramado();
-        for (Cuenta cuenta: corrientes) {
-            if(cuenta.getNumeroCuenta() == numCuenta) {
-                tipo = 1;
-            }
-        }
-        for (CuentaAhorro ahorro: ahorros) {
-            if(ahorro.getNumeroCuenta() == numCuenta) {
-                tipo = 2;
-            }
-        }
-        for (CuentaAhorroProgramado ahorroProgramado: ahorrosProgramados) {
-            if(ahorroProgramado.getNumeroCuenta() == numCuenta) {
-                tipo = 3;
-            }
-        }
-        return tipo;
-    }
-    public boolean verificacionNumeroCuenta(int numCuenta) {
-        boolean estado = false;
-        List<Cuenta> corrientes = listaCuentaCorriente();
-        for(Cuenta cuenta: corrientes) {
-            System.out.println(cuenta.toCSVLine());
-        }
-        List<CuentaAhorro> ahorros = listaCuentaAhorro();
-        List<CuentaAhorroProgramado> ahorrosProgramados = listaCuentaAhorroProgramado();
-        for (Cuenta cuenta: corrientes) {
-            if(cuenta.getNumeroCuenta() == numCuenta) {
-                estado = true;
-            }
-        }
-        for (CuentaAhorro ahorro: ahorros) {
-            if(ahorro.getNumeroCuenta() == numCuenta) {
-                estado = true;
-            }
-        }
-        for (CuentaAhorroProgramado ahorroProgramado: ahorrosProgramados) {
-            if(ahorroProgramado.getNumeroCuenta() == numCuenta) {
-                estado = true;
-            }
-        }
-        return estado;
-    }
+
+
+
 
     public void listarCuentasCorrientes(){
         File archivo = new File("c:\\dev\\listOfCuentasCorrientes.csv");
@@ -387,4 +365,6 @@ public class Gestor {
         return result;
     }
     //--FIN LISTADO DE LOS OBJETOS--
+
+     */
 }

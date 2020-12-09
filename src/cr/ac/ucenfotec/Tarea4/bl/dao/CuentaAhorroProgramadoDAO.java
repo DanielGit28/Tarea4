@@ -32,11 +32,25 @@ public class CuentaAhorroProgramadoDAO {
         }
     }
 
-    public Cliente encontrarPorId(String cedula){
-        return null;
+    public CuentaAhorroProgramado obtenerCuenta(int numeroCuenta) throws SQLException {
+        CuentaAhorroProgramado cuenta = new CuentaAhorroProgramado();
+        Statement query = cnx.createStatement();
+
+        ResultSet resultado = query.executeQuery("select * from cuenta_ahorro_programado where numeroCuenta = "+numeroCuenta+"");
+
+        if(resultado.next()) {
+            cuenta.setNumeroCuenta(resultado.getInt("numeroCuenta"));
+            cuenta.setSaldo(resultado.getDouble("saldo"));
+            cuenta.setFechaApertura(resultado.getDate("fechaApertura").toLocalDate());
+            cuenta.setCliente(clienteDAO.obtenerCliente(resultado.getString("idCliente")));
+            cuenta.setCuentaCorrienteAsociada(cuentaDAO.obtenerCuenta(resultado.getInt("cuentaCorrienteAsociada")));
+        }
+
+
+        return cuenta;
     }
 
-    public List<CuentaAhorroProgramado> obtenerTodosLasCuentasAhorroProgramado() throws SQLException {
+    public ArrayList<CuentaAhorroProgramado> obtenerTodosLasCuentasAhorroProgramado() throws SQLException {
         ResultSet resultado = this.queryCuentas.executeQuery();
         ArrayList<CuentaAhorroProgramado> listaCuentasAhorro = new ArrayList<>();
         ArrayList<Cliente> listaClientes = clienteDAO.obtenerTodosLosClientes();
@@ -46,16 +60,8 @@ public class CuentaAhorroProgramadoDAO {
             leido.setNumeroCuenta(resultado.getInt("numeroCuenta"));
             leido.setSaldo(resultado.getDouble("saldo"));
             leido.setFechaApertura(LocalDate.parse(resultado.getString("fechaApertura")));
-            for (Cliente cliente: listaClientes) {
-                if(cliente.getId().equals(resultado.getString("idCliente"))) {
-                    leido.setCliente(cliente);
-                }
-            }
-            for (Cuenta cuenta : listaCuentas ) {
-                if(cuenta.getNumeroCuenta() == leido.getNumeroCuenta()) {
-                    leido.setCuentaCorrienteAsociada(cuenta);
-                }
-            }
+            leido.setCliente(clienteDAO.obtenerCliente(resultado.getString("idCliente")));
+            leido.setCuentaCorrienteAsociada(cuentaDAO.obtenerCuenta(resultado.getInt("cuentaCorrienteAsociada")));
             listaCuentasAhorro.add(leido);
         }
         return listaCuentasAhorro;
